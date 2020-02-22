@@ -1,0 +1,11 @@
+com\shd\bigfile\test\generators\RecordGenerator.class
+com\shd\bigfile\test\recordsimpl\WriteRecordEmpImpl.class
+com\shd\bigfile\test\generators\GenerateLisOfEmployee.class
+com\shd\bigfile\test\generators\GenerateLisOfEmployee$DateFormatISOForGsonFun.class
+com\shd\bigfile\test\generators\GenerateLisOfEmployee$EmpFunction.class
+com\shd\bigfile\test\generators\Employee.class
+com\shd\bigfile\test\maintesting\MainTestReadWrite.class
+com\shd\bigfile\test\recordsimpl\RecordReadByteEmployeeImpl.class
+com\shd\bigfile\test\recordsimpl\WriteRecordStrImpl.class
+com\shd\bigfile\test\maintesting\GsonTest.class
+com\shd\bigfile\test\recordsimpl\ReadRecordStrImpl.class
