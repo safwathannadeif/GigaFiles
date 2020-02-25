@@ -26,9 +26,10 @@ Implementation Summary:
   
 
 Illustration Example: 
-   MainTestReadWrite [pkg: com.shd.bigfile.test.maintesting], includes an example that implements the write and read for json employee record.
-   In these examples, a generator for employee records-Variable Length Record- is available to generate Giga number of records.
-  The elapsed time for writing and reading depends in the IO processor. 
-  For example writing 36 Giga file can be done in 21 minutes in one IO processor while the same size (36 Giga) took 4.5 hours in another IO processor.
-  Java Memory heap size reached and stabilized to 3.6G with a 3 Byte buffers, and the size of each buffer equals 650M. No Java Memory tuning is required
- Eclipse can Not be used for such Memory size. Any run should be from the command line. The mvn is included to generate the jar to be run from the command line. 
+
+MainTestReadWrite [pkg: com.shd.bigfile.test.maintesting], includes an example that implements the write and read for json employee record.
+In these examples, a generator for employee records-Variable Length Record- is available to generate Giga number of records.
+The elapsed time for writing and reading depends in the IO processor. 
+For example writing 36 Giga file can be done in 21 minutes in one IO processor while the same size (36 Giga) took 4.5 hours in another IO processor.
+Java Memory heap size reached and stabilized to 3.6G with a 3 Byte buffers, and the size of each buffer equals 650M. No Java Memory tuning is required
+Eclipse can Not be used for such Memory size. Any run should be from the command line. The mvn is included to generate the jar to be run from the command line. 
