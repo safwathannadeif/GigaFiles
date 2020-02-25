@@ -1,17 +1,28 @@
 Function:
     Generates Giga file from collected data. The collected data from different resources and multiple databases are consolidated in single file for further processing (mining) in other remote sites.
     The size of these files can be hundreds of Giga.
+
 Implementation Summary:
   Java 11
+  
   Producer consumer design pattern with a control for memory consumption.
+  
   Read write utilized Java NIO Byte Buffer with configurable Byte Buffer size.
+  
   Collected records can be any type. CVS, json object or any POJO.
+  
   Generic Record Interface for read and write any Record type.
+  
   Different types of records can be mixed & consolidated in the same file.
+  
   For Different types of records, a tag record identifier can be attached for each record to identify the type of the record.
+  
   For the same type of record in the same collected file, the tag can be null to save space
+  
   The max size of the record in Bytes equals  “ Integer.MAX_VALUE - MEGA*10”
+  
   The max for the tag size is 255 Bytes 
+  
 
 Illustration Example: 
    MainTestReadWrite [pkg: com.shd.bigfile.test.maintesting], includes an example that implements the write and read for json employee record.
