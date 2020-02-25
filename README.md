@@ -1,5 +1,5 @@
 Function:
-    Generates Giga file from collected data. The collected data from different resource and multiple databases is consolidated in single file for further processing (mining) in other remote sites.
+    Generates Giga file from collected data. The collected data from different resources and multiple databases are consolidated in single file for further processing (mining) in other remote sites.
     The size of these files can be hundreds of Giga.
 Implementation Summary:
     > Java 11
