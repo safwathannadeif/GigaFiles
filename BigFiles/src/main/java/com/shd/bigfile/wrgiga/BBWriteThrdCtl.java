@@ -1,7 +1,6 @@
 package com.shd.bigfile.wrgiga;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import com.shd.commonref.ExtendedLevel;
 import com.shd.commonref.LoggerRef;
@@ -10,9 +9,11 @@ public class BBWriteThrdCtl extends Thread
 
 {          
 private     GigaFileWrite fileWrite ;
-public BBWriteThrdCtl(GigaFileWrite fileWritei)
+private     ByteBufMgr  bbMgr ;
+public BBWriteThrdCtl(GigaFileWrite fileWritei, ByteBufMgr bbMgri)
 	{	
 		fileWrite =fileWritei ;
+		bbMgr = bbMgri ;
 		
 	}
 	
@@ -28,17 +29,18 @@ public BBWriteThrdCtl(GigaFileWrite fileWritei)
 	    }
 	
 //	
-	public void writeSlicedToFile2(ByteBuffer wByteBuffer ) throws IOException
+	public void writeAccumulatedToFile() throws IOException
 	{
-		if (wByteBuffer.position() !=0 )wByteBuffer.flip();
-		//showWhatWritten(wByteBuffer) ; //Debug***********Debug Only
-		fileWrite.getfChannel().write(wByteBuffer);
-		while (wByteBuffer.hasRemaining())
-		{
-			fileWrite.getfChannel().write(wByteBuffer); 
-		}
-		wByteBuffer.clear() ;
-		wByteBuffer= null ;
+		//wByteBuffer.flip() ;
+		//lenOfBuf.putInt(wByteBuffer.limit()) ;
+		bbMgr.getBbAccumulated().flip() ;
+		bbMgr.getBbLengthAccumulated().putInt(bbMgr.getBbAccumulated().limit()) ;
+		bbMgr.getBbLengthAccumulated().flip() ;
+		//fileWrite.getfChannel().write(new ByteBuffer[] {lenOfBuf, wByteBuffer}) ;
+		fileWrite.getfChannel().write(bbMgr.getByteBufferWriteArry()) ;
+		bbMgr.getBbAccumulated().clear() ;
+		//wBytBuffer.wByteBuffer.clear() ;
+		bbMgr.getBbLengthAccumulated().clear();
 	}
 
 

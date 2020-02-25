@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import com.shd.commonref.ExtendedLevel;
 import com.shd.commonref.LoggerRef;
 public class BBRead {
-//private	ByteBuffer byteBuffAccInput  ; 
+
 public BBRead( )
 {
 	
@@ -30,11 +30,11 @@ RecordsFromBuf recordsFromBufi = (byteBuffAccInput,readRecordsi) ->
 			//
 			byteBuffAccInput.get(bytesTag);	
 			String tagRecStr=  new String(bytesTag, StandardCharsets.UTF_8);
-			LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"TagRec-Str/Size[" + tagRecStr +"] " + intUnSignx ) ;	 
+			if (intUnSignx > 0 )LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"TagRec-Str/Size[" + tagRecStr +"] " + intUnSignx ) ;	 
 			//
 			int lenOfRec = byteBuffAccInput.getInt();
 			byte[] recBytes = new byte[lenOfRec] ;
-			byteBuffAccInput.get(recBytes) ;
+			byteBuffAccInput.get(recBytes) ; 
 			Object objRec = readRecordsi.getByteToRecordFuncImpl().makeRecord(recBytes) ;
 			readRecordsi.addRecord(objRec);	
 		}

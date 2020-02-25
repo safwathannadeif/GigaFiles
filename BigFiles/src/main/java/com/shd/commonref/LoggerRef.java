@@ -38,8 +38,6 @@ public class LoggerRef {
 			consoleHandler.setFormatter(logFrmt);
 			//consoleHandler.setLevel(Level.ALL);
 			consoleHandler.setLevel(l);
-			
-			System.out.println("makeLogRefInit Done with Level=" + l);
 			servLogDisply.addHandler(consoleHandler);
 			//
 			FileHandler fileTxt = null;

@@ -21,10 +21,18 @@ import com.shd.commonref.LoggerRef;
 public class GsonTest {
 	
 	    public static void main(String[] args) throws IOException, InterruptedException {
+	    	
 	    	LoggerRef.makeLogRefInit(ExtendedLevel.MSG) ;
-	    	test() ;
+	    	//test() ;
+	    	testEmpGenerate(1,20);
 	    } 
-
+	public static void testEmpGenerate(int is,int ie)
+	{
+		GenerateLisOfEmployee genEmpi = new GenerateLisOfEmployee() ;
+       	List<Employee> lisOfEmp = genEmpi.generateEmpLis(is, ie) ;
+       	System.out.println("*lisOfEmp*\n" + lisOfEmp.toString()) ;
+		
+	}
 	public static void test() throws IOException {
 	GenerateLisOfEmployee genEmpi = new GenerateLisOfEmployee() ;
 	List<Employee> lisOfEmp = new ArrayList<>() ;
@@ -42,6 +50,8 @@ public class GsonTest {
 	public static void test2(Employee empi) throws IOException
 	{
 	
+			
+			
 			//ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 			//write data to byteArrayOutputStream
 			ByteArrayOutputStream osB =new ByteArrayOutputStream();
@@ -55,10 +65,9 @@ public class GsonTest {
 
 	        //writer.endArray();
 	        writer.close();
-	        byte[] bytes = osB.toByteArray() ;
-	        Employee empBack = byteToRecordEmplFuncImpl.makeRecord(bytes) ;
-	        //use Lampda Function from WriteRecordEmpImpl to conv back bytes to EMP
-	        System.out.println("**empBack**" + empBack.toString()) ;
+	        //byte[] bytes = osB.toByteArray() ;
+	       // Employee empBack = byteToRecordEmplFuncImpl.makeRecord(bytes) ;
+	        //use Lambda Function from WriteRecordEmpImpl to conv back bytes to EMP
 	 }
 	public static   ByteToRecordFuncIF<Employee> byteToRecordEmplFuncImpl = (byteAry -> {
 		InputStream is = new ByteArrayInputStream(byteAry);

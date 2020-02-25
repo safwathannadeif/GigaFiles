@@ -6,27 +6,20 @@ package com.shd.bigfile.wrgiga;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-
+import com.shd.commonref.ExtendedLevel;
 import com.shd.commonref.LoggerRef;
-
 public class ProducerConsumerWriter {
-private	LinkedList<ByteBuffer> linkLis= new LinkedList<ByteBuffer>();
 private int bufSize;
 private int size;
-//private String produceOrConsume = null ;
-//private Boolean produceWait = false ;
-//private Boolean endOfProduced = false ;
-//private Boolean consumeWait = false ;
 private Boolean endOfWrite = false ;
-private ByteBuffer bbAccumulated ;
+//private ByteBuffer bbAccumulated ;
+private ByteBufMgr byteBufMgr ;
+private static final int Tag_Max_length = 252 ;
 
-
-public ProducerConsumerWriter(int bufSizei) {
- // maxBufSize = (cap > 0) ? cap : 1; // at least 1
-bufSize=bufSizei ;
+public ProducerConsumerWriter(ByteBufMgr bbMgr) {
+//bufSize=bufSizei ;
+byteBufMgr=bbMgr ;
 size = 0;
- bbAccumulated= ByteBuffer.allocate(bufSize+4) ;
 }
 
 public synchronized int getSize() {
@@ -38,95 +31,60 @@ public synchronized boolean isFull() {
 }
 
 public synchronized void recordProducer( @SuppressWarnings("rawtypes") WriteRecordIF WriteRecordsImpl,String tagStri) throws InterruptedException {
-  //produceOrConsume ="Produce" ;
   if (endOfWrite) {
 	  notify() ;		//**Notify to Write Last if any and and Stop wait for the consumer**
-	  //produceWait=false ;
-	  return ;   //no more add and let the caller client caller thread finalize it 
+	  return ;   //no more add and let the client caller thread finalize it 
   }
 
- // produceWait=false ;
-
-  ByteBuffer bbRec =  makeTheRecWithTag(WriteRecordsImpl,tagStri ) ;
-  int sizeRequest =  bbRec.limit();
-  if (sizeRequest > bufSize &&  size== 0)
-  {
-	  //produceWait=true ;
-	  linkLis.add(bbRec);	  
-      size =sizeRequest +size;
-      notifyConsumerAndWait() ;
-      return ;
+     makeTheRecWithTag(WriteRecordsImpl,tagStri ) ;
+  if (byteBufMgr.getBbRecord().capacity() >  byteBufMgr.getBbAccumulated().capacity()) {  //evict and resize
+	  if ( size > 0) notifyConsumerAndWait() ;
+	  byteBufMgr.reSizeBbAccumulated(byteBufMgr.getBbRecord().capacity()) ;
+	  LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"Evict and Resize Event. Accumulate bufSize changed from/to " + bufSize +"/" + byteBufMgr.getBbRecord().capacity() );
+	  bufSize=byteBufMgr.getBbRecord().capacity() ;
   }
-  // int  testTotSizeRequested = size + sizeRequest ;
-  if  ( bufSize < size + sizeRequest  ) {
+  
+  if  ( byteBufMgr.getBbAccumulated().capacity() < size +  byteBufMgr.getBbRecord().limit()  ) {
 	  notifyConsumerAndWait() ;
   }
-  if (bbRec != null )
+  if (byteBufMgr.getBbRecord() != null )
   {
-  linkLis.add(bbRec);
-  size = sizeRequest +size;
+  byteBufMgr.getBbAccumulated().put(byteBufMgr.getBbRecord());
+  size = byteBufMgr.getBbRecord().limit() +size;
+  byteBufMgr.getBbRecord().clear() ;
+ 
   }
-  //produceWait=false ;
 }
 public synchronized void notifyConsumerAndWait() throws InterruptedException {
 	notify() ;
-	  //produceWait=true ;
 	  wait () ;
-	  size= 0 ;
+	  
 }
 //
 public synchronized void writerConsumer(GigaFileWrite fileWrite) throws InterruptedException, IOException {	
-	//produceOrConsume ="Consume" ;
-	//consumeWait=true ;
-	//printState() ;
-	wait() ;
-	//consumeWait=false ;
-	//printState() ;
-if (linkLis.isEmpty()) return ;
-	
-//ByteBuffer bbAccumulated= ByteBuffer.allocate(size+4) ;
-
-	bbAccumulated.putInt(size) ;
-	linkLis.forEach((bbRec) -> {
-		//bbAccumulated.putInt(bbRec.limit()) ; //Length oF Record
-		//printState() ;
-		bbAccumulated.put(bbRec);
-		bbRec.clear() ;
-		bbRec = null ;
-	});
-	linkLis.clear();
-	//LoggerRef.logInfo("**** Start Write to File size=" + size) ;
-	
-	//LoggerRef.logInfo("**** Start Write to File size Changed=" + size) ;
-	fileWrite.getbBWrite().writeSlicedToFile2(bbAccumulated) ;
-	size=0 ;
-	bbAccumulated.clear();
-	
-	//LoggerRef.logInfo("**** End Write to File size =" + size) ;
-	
+wait() ;
+if (size > 0) fileWrite.getbBWrite().writeAccumulatedToFile() ; 
+byteBufMgr.getBbAccumulated().clear();
+	size= 0 ;
 	if (endOfWrite) {
-		//consumeWait=false ;
 		fileWrite.endWrite() ;
 		return ;
 	}
 	notify() ;
-	//consumeWait=true ;
 	writerConsumer(fileWrite) ; 
 }
 public synchronized void done() throws InterruptedException {
 	endOfWrite= true ;
 	recordProducer(null,null);
 }
-//
-//public   synchronized void printState() {
-//	String priState= "PCW [linkLis=" + linkLis + ", capacity=" + bufSize + ", size=" + size + ", ProduceOrConsume="
-//			+ produceOrConsume + ", ProduceWait=" + produceWait + ", ConsumeWait=" + consumeWait+", EndOfProduced=" + endOfProduced 
-//			+ ", endOfWrite=" + endOfWrite + "]";
-//	LoggerRef.makeLogRef().log(ExtendedLevel.DEBUG,priState);
-//}
-//
+
 @SuppressWarnings({ "rawtypes", "unchecked" })
-private synchronized ByteBuffer makeTheRecWithTag(WriteRecordIF WriteRecordsi,String tag) {
+private synchronized void makeTheRecWithTag(WriteRecordIF WriteRecordsi,String tag) {
+	//Check tag length to be max 252
+	if (tag != null && tag.length() > Tag_Max_length) {
+		tag = tag.substring(0,252) ;
+		LoggerRef.makeLogRef().log(ExtendedLevel.MSG, "tagValue Size truncted to Max:=" + Tag_Max_length ) ;
+	}
 	byte[] tagBytes =String.valueOf("").getBytes() ;
 	byte tagLengthInOneByte ;
 	if (tag== null) {
@@ -137,13 +95,15 @@ private synchronized ByteBuffer makeTheRecWithTag(WriteRecordIF WriteRecordsi,St
 		 tagLengthInOneByte =(byte)tagBytes.length ;	
 	}
 	int unSignx = Byte.toUnsignedInt(tagLengthInOneByte);
-	LoggerRef.makeLogRef().info("tagValue/Size:" + tag +"["+tagLengthInOneByte +"]" ) ;
+	LoggerRef.makeLogRef().log(ExtendedLevel.MSG, "tagValue/Size:" + tag +"["+tagLengthInOneByte +"]" ) ;
 	byte[] recBytes =WriteRecordsi.getRecordToByteFuncImpl().makeRecordToByte(WriteRecordsi.getRecord()) ;
 	int lengthOfRecord = recBytes.length ;
 	int totLength = 1+unSignx+4+lengthOfRecord ;
-	ByteBuffer bbRecWithTag = ByteBuffer.allocate(totLength) ;
+	//
+	ByteBuffer bbRecWithTag =byteBufMgr.getBbRecord(totLength);
 	bbRecWithTag.put(tagLengthInOneByte).put(tagBytes).putInt(lengthOfRecord).put(recBytes) ;
-	bbRecWithTag.flip();
-	return bbRecWithTag ;
+	bbRecWithTag.flip(); //flip makes the limit == the written length
+	
+	
 }
 }

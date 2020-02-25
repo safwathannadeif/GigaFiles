@@ -8,11 +8,11 @@ import com.shd.commonref.ExtendedLevel;
 import com.shd.commonref.LoggerRef;
 
 public class GigaFileWrite {
-	private FileChannel fChannel = null ;
+	private FileChannel  fChannel = null ;
 	private BBWriteThrdCtl   bBWrite;
 	private FileOutputStream wFouts = null ;
 	private ProducerConsumerWriter synchInOut ;
-	private  int  Byte_Buf_Size = 10*1024 ;		//default 10K
+	private  int  Byte_Buf_Size_In_M = 25 ;	//default 10M
 	public GigaFileWrite(String filename, int bufSize) throws IOException
 	{
 		setMaxBufSize(bufSize);
@@ -20,6 +20,7 @@ public class GigaFileWrite {
 	}
 	public GigaFileWrite(String filename) throws IOException
 	{
+		setMaxBufSize(Byte_Buf_Size_In_M) ; //Default 25 M
 		initGigaFileWrite(filename);
 	}
 	private void initGigaFileWrite(String filename) throws IOException
@@ -27,10 +28,10 @@ public class GigaFileWrite {
 		wFouts = new FileOutputStream(filename);
 		fChannel = wFouts.getChannel() ;
 		fChannel.force(true);
-		synchInOut = new ProducerConsumerWriter(Byte_Buf_Size) ;
-		LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"MaxBufSize Used In K=[" + Byte_Buf_Size/1024 +"]" ) ;
-		fChannel.force(true);
-		bBWrite = new BBWriteThrdCtl (this) ;  
+		ByteBufMgr byteBufMgri = new ByteBufMgr(Byte_Buf_Size_In_M);
+		synchInOut = new ProducerConsumerWriter(byteBufMgri) ;
+		LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"BufSize Used In Bytes=[" + Byte_Buf_Size_In_M +"]" ) ;
+		bBWrite = new BBWriteThrdCtl (this,byteBufMgri) ;  
 		bBWrite.start();
 		
 	}
@@ -68,15 +69,16 @@ public class GigaFileWrite {
 	}
 
 	public int getMaxBufSize() {
-		return Byte_Buf_Size;
+		return Byte_Buf_Size_In_M;
 	}
-	private void setMaxBufSize(int sizeInK) {
+	private void setMaxBufSize(int sizeInM) {
 		
-		if (sizeInK < 1) {
-			LoggerRef.makeLogRef().log(ExtendedLevel.ERR,"MaxBufSize Should be > 1 Not " + sizeInK) ;
-			throw new RuntimeException("MaxBufSize Should be > 1") ;
+		if (sizeInM < 1) {
+			LoggerRef.makeLogRef().log(ExtendedLevel.ERR,"MaxBufSize Should be > 1 Not " + sizeInM) ;
+			throw new RuntimeException("MaxBufSize Should be > 1 M") ;
 		}
-		 Byte_Buf_Size=1024*sizeInK ;
+		Byte_Buf_Size_In_M=1024*1024*sizeInM ;
+		//Byte_Buf_Size_In_M=sizeInM ;
 	}
 	
 }

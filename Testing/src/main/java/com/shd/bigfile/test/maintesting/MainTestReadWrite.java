@@ -1,22 +1,12 @@
-/*-1 cd C:\GigaFiles\GigaFile\Testing\target
- * C:\GigaFiles\GigaFile\Testing\target> 
- * -2java -Xss1M  -jar .\Testing-VT1-jar-with-dependencies.jar com.shd.bigfile.test.maintesting.MainTestReadWrite
- * Xss1M for stacksize --One Thread with ByteBufer for large iterations gives out of stack
- * -3 bufSize size for GigaFileWrite, range from 10M to 40M
- *  For Testing Avg  7G file output from 32,000,000 Employee records
- *  Large files can run command line NOT FROM ECLIPSE 
- */
 package com.shd.bigfile.test.maintesting;
-// C:\GigaFiles\GigaFile\Testing\target
-// java -Xss1M -jar .\Testing-VT1-jar-with-dependencies.jar com.shd.bigfile.test.maintesting.MainTestReadWrite
-//Large File bufSize 10M -- 40M Tested 
-// -XX:MaxDirectMemorySize=655360 for bytebuffer size
-// java -Xss1M -XX:MaxDirectMemorySize=655360 -jar .\Testing-VT1-jar-with-dependencies.jar com.shd.bigfile.test.maintesting.MainTestReadWrite
-//-2  java -Xss1M -XX:MaxDirectMemorySize=900000 -jar .\Testing-VT1-jar-with-dependencies.jar com.shd.bigfile.test.maintesting.MainTestReadWrite
-//-3 The Buf size parameter for GigaFileWritein constructor K. value should be between 10M to 60M
-//         e.g new GigaFileWrite(wFilename, 10240); means 10M=1024*10240 
+// 	C:\GigaFiles\GigaFile\Testing\target
+//	java  -jar .\Testing-VT1-jar-with-dependencies.jar com.shd.bigfile.test.maintesting.MainTestReadWrite
+//         new GigaFileWrite(wFilename, 10240); means 10M=1024*10240 
+// for  Large files  run the command line BUT NOT FROM ECLIPSE 
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,55 +24,65 @@ import com.shd.commonref.LoggerRef;
 
 public class MainTestReadWrite {
     public static void main(String[] args) throws IOException, InterruptedException {
+    	Instant start = Instant.now();
     	Thread.currentThread().setName("MainThrd");
     	LoggerRef.makeLogRefInit(ExtendedLevel.MSG) ;
     	//testWriteStr() ;
     	//testReadStr() ;
     	//testWriteEmp() ;
     	testReadEmp() ;
+    	Instant finish = Instant.now();
+    	long timeElapsed = Duration.between(start, finish).toMillis();
+    	System.out.println("timeElapsed=[" + timeElapsed+"] Milli-Secs") ;
     }  
 //
     public static void testWriteEmp() throws InterruptedException, IOException
     {
-    int useBufSizeForWriting= 10240*6 ; //size in K 10240 means 10M Range from 10M to 60M
-   // int useBufSizeForWriting= 1024 ; //size in K 10240 means 10M Range from 10M to 60M
-    String wFilename = "C:/GigaFiles/DataFiles/wFileEmployee.binATextTry" ;
+   
+    int useBufSizeForWriting= 120; //size in M , Default 25M
+    //String wFilename = "C:/GigaFiles/DataFiles/wFileEmployee.binATextTryG24-90M" ;
+    String wFilename = "C:/GigaFiles/DataFiles/wFileEmployee.binATextTry120" ;
       	
       	//GigaFileWrite fileWrite = new GigaFileWrite(wFilename) ;
       	GigaFileWrite fileWrite = new GigaFileWrite(wFilename, useBufSizeForWriting) ; // 10240 size in KB
-      	String tagStr = RecordGenerator.generate(2) ; //Byte Max int is 127 unsigned can be up to 255
+      	
       	GenerateLisOfEmployee genEmpi = new GenerateLisOfEmployee() ;
-      	int is = 1 ;  int ie =1000 ;
-      	for (int i=1; i < 64 ; i++) //10000
+      	int noRecord =0 ;
+      	int is = 1 ;  int ie =203 ;
+      	for (int i=1; i < 51; i++) //10000  6001
       //	for (int i=1; i <2 ; i++) //10000
-      	{
-      	  
+      	{  
     	List<Employee> lisOfEmp = genEmpi.generateEmpLis(is, ie) ;
-    	//lisOfEmp.forEach( emp -> 
     	for (Employee emp:lisOfEmp)
     	{
     		WriteRecordEmpImpl emplRec = new WriteRecordEmpImpl(emp) ;
-    		//tagStr = "ST"+tagStr +"ET" ;
-    		tagStr = null ; 
+    		String tagStr = RecordGenerator.generate(6) ; //Byte Max int is 127 unsigned can be up to 255
+    		tagStr = "ST"+tagStr +"ET" ;
+    		//String tagStr= null ;
     		fileWrite.addRec(emplRec, tagStr);
+    	    ++noRecord ;
     		LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"addEmplRecord:" + emp.toString() ) ;
+    		tagStr = null ; 
     	}
-    	is =ie+1 ;
+    	is =ie ;
     	ie = ie+10000 ;
       	}
     	fileWrite.doneWrite();
+    	LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"Total No Of Record Written:[" + noRecord  +"]") ;
     }
 //
     @SuppressWarnings("unchecked")
 	public static void testReadEmp() throws InterruptedException, IOException
     {
-    	 String rFilename = "C:/GigaFiles/DataFiles/Save_wFileEmployee.binAText3" ;
+    	int noRecord =0 ; 
+    	String rFilename = "C:/GigaFiles/DataFiles/wFileEmployee.binATextTry120" ;
     	 GigaFileRead fileReadi = new GigaFileRead(rFilename) ; 
     	 RecordReadByteEmployeeImpl rEmpImp = new RecordReadByteEmployeeImpl() ;
     		while (fileReadi.readRecords(rEmpImp) )
     		{
     			@SuppressWarnings("rawtypes")
 				List lisOut = rEmpImp.getListOfStrRecs() ;
+    			 noRecord  =  noRecord +  lisOut.size() ;
     			Object allMgs= lisOut.stream().map(Object::toString).collect(Collectors.joining("")) ;
     			LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"MainTestReadWrite:testReadEmp.LisOneBuksOfRecords Start"  ) ;
     			LoggerRef.makeLogRef().log(ExtendedLevel.MSG, "\n" +allMgs);	
@@ -90,7 +90,7 @@ public class MainTestReadWrite {
     			rEmpImp = new RecordReadByteEmployeeImpl() ;
     		}
     		//Read will Close the file at this point
-    
+    		LoggerRef.makeLogRef().log(ExtendedLevel.MSG,"Total No Of Record Read:[" + noRecord  +"]") ;
     }
 public static void testWriteStr() throws InterruptedException, IOException
 {
